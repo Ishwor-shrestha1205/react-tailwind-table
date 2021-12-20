@@ -5,6 +5,7 @@ import {
   useAsyncDebounce,
   useFilters,
   useSortBy,
+  usePagination,
 } from "react-table"; // new
 
 export function SelectColumnFilter({
@@ -76,9 +77,23 @@ function Table({ columns, data }) {
     headerGroups,
     rows,
     prepareRow,
-    state, // new
-    preGlobalFilteredRows, // new
-    setGlobalFilter, // new
+    //new
+    page, // Instead of using 'rows', we'll use page,
+    // which has only the rows for the active page
+
+    // The rest of these things are super handy, too ;)
+    canPreviousPage,
+    canNextPage,
+    pageOptions,
+    pageCount,
+    gotoPage,
+    nextPage,
+    previousPage,
+    setPageSize,
+
+    state,
+    preGlobalFilteredRows,
+    setGlobalFilter,
   } = useTable(
     {
       columns,
@@ -86,7 +101,8 @@ function Table({ columns, data }) {
     },
     useFilters,
     useGlobalFilter,
-    useSortBy
+    useSortBy,
+    usePagination
   ); // new
 
   // Render the UI for your table
@@ -126,7 +142,8 @@ function Table({ columns, data }) {
           ))}
         </thead>
         <tbody {...getTableBodyProps()}>
-          {rows.map((row, i) => {
+          {page.map((row, i) => {
+            // replace row with page
             prepareRow(row);
             return (
               <tr {...row.getRowProps()}>
@@ -140,6 +157,38 @@ function Table({ columns, data }) {
           })}
         </tbody>
       </table>
+      <div className="pagination">
+        <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
+          {"<<"}
+        </button>{" "}
+        <button onClick={() => previousPage()} disabled={!canPreviousPage}>
+          {"<"}
+        </button>{" "}
+        <button onClick={() => nextPage()} disabled={!canNextPage}>
+          {">"}
+        </button>{" "}
+        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
+          {">>"}
+        </button>{" "}
+        <span>
+          Page{" "}
+          <strong>
+            {state.pageIndex + 1} of {pageOptions.length}
+          </strong>{" "}
+        </span>
+        <select
+          value={state.pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+          }}
+        >
+          {[5, 10, 20].map((pageSize) => (
+            <option key={pageSize} value={pageSize}>
+              Show {pageSize}
+            </option>
+          ))}
+        </select>
+      </div>
       <div>
         <pre>
           <code>{JSON.stringify(state, null, 2)}</code>
